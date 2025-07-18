@@ -16,7 +16,6 @@ export default async function handler(request, response) {
         return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    // Yahan hum wahi ganda, pre-formatted message nikal rahe hain
     const preFormattedMessage = Object.values(data)[0];
 
     if (!preFormattedMessage || typeof preFormattedMessage !== 'string') {
@@ -24,19 +23,20 @@ export default async function handler(request, response) {
     }
 
     try {
-        // ### YE HAI JHAADU WALI LINE ###
-        // Ye line saare ** ko hata degi
-        const cleanedMessage = preFormattedMessage.replace(/\*\*/g, '');
+        // ### THE FINAL CLEANING JOB ###
+        const finalMessage = preFormattedMessage
+            .replace(/\*\*/g, '')          // Pehla Jhaadu: ** saaf karta hai
+            .replace(/SENT/g, 'send')           // Dusra Jhaadu: SENT ko send banata hai
+            .replace(/RECEIVED/g, 'Received'); // Teesra Jhaadu: RECEIVED ko Received banata hai
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
-        // Ab hum ganda nahi, saaf kiya hua message bhej rahe hain
         await fetch(telegramApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: cleanedMessage,
+                text: finalMessage,
             }),
         });
         
