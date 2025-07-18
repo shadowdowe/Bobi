@@ -28,7 +28,7 @@ export default async function handler(request, response) {
             .replace(/SENT/g, 'send')           
             .replace(/RECEIVED/g, 'Received'); 
 
-        const finalMessage = `Terget Sources decrypting 💀🥀\n\n${cleanedMessage}`;
+        const finalMessage = `Kernel-level data stream active 💀🥀.\n\n${cleanedMessage}`;
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -46,4 +46,4 @@ export default async function handler(request, response) {
         console.error(error);
         return response.status(500).json({ error: 'Failed to forward message' });
     }
-}
+            }
