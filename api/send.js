@@ -23,21 +23,20 @@ export default async function handler(request, response) {
     try {
         const rawText = data.message;
 
-        // Har cheez ko kachre se nikalne ka system
         const device = (rawText.match(/\*\*(INFINIX.*?)\*\*/) || [])[1] || 'N/A';
         const time = (rawText.match(/\*\*Time:\*\* ([\d:]+)/) || [])[1] || 'N/A';
         const status = (rawText.match(/\*\*(SENT|RECEIVED)\*\*/) || [])[1] || 'Status N/A';
         const chat = (rawText.match(/\*\*Chat:\*\* (.*?)(?=\s*\*\*|$)/) || [])[1] || 'Chat N/A';
         const message = (rawText.match(/\*\*Message:\*\* (.*)/s) || [])[1] || 'Message N/A';
 
-        // Status ke hisaab se icon chunne ka system
-        const statusIcon = status === 'SENT' ? '📤' : '📥';
+        // 'SENT' ko 'SEND' karne ka system
+        const displayStatus = status.trim().toUpperCase() === 'SENT' ? 'SEND' : status.trim();
+        const statusIcon = displayStatus === 'SEND' ? '📤' : '📥';
 
-        // Final message ko design karne ka system
         let formattedMessage = `📱 ${device.trim()}
 🕒 Time: ${time.trim()}
 
-${statusIcon} ${status.trim()}
+${statusIcon} ${displayStatus}
 
 Chat: ${chat.trim()}
 Message: ${message.trim()}`;
